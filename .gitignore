@@ -1,0 +1,13 @@
+.idea/
+.gradle/
+.DS_Store
+.settings/
+build/
+target/
+classes/
+logs/
+*.log
+*.class
+nohup.out
+dump.rdb
+*.iml
