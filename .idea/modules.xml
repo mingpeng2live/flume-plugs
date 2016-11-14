@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/flume-plugins.iml" filepath="$PROJECT_DIR$/flume-plugins.iml" />
+      <module fileurl="file://$PROJECT_DIR$/source-handler/source-handler.iml" filepath="$PROJECT_DIR$/source-handler/source-handler.iml" />
+    </modules>
+  </component>
+</project>
