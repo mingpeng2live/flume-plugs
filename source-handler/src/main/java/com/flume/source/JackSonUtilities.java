@@ -1,13 +1,15 @@
-package com.flume;
+package com.flume.source;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flume.Constant;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Map;
 
 /*
@@ -16,7 +18,7 @@ import java.util.Map;
 @SuppressWarnings("deprecation")
 public class JackSonUtilities {
 
-	static Logger logger = LoggerFactory.getLogger(com.flume.JackSonUtilities.class);
+	static Logger logger = LoggerFactory.getLogger(JackSonUtilities.class);
 	private static ObjectMapper m = new ObjectMapper();
 
 	public static <T> T toBean(String jsonAsString, Class<T> pojoClass)
@@ -79,4 +81,35 @@ public class JackSonUtilities {
 		}
 	}
 
+	/** 转换json字符串 如果转换出现异常返回长度为0的字节数组 */
+	public static final byte[] toBytes(Object obj) {
+		byte[] jsonBytes = new byte[0];
+		try {
+			jsonBytes = m.writeValueAsBytes(obj);
+		} catch (Exception e) {
+			logger.error(obj.getClass().getName() + "对象转换为byte出错！", e);
+		}
+		return jsonBytes;
+	}
+
+
+    /** byte[] */
+    public static final JsonNode readJsonNode(byte[] content) throws Exception {
+        return m.readTree(content);
+    }
+
+    /** 将InputStream 转换为JsonNode对象 */
+    public static final JsonNode readJsonNode(InputStream in) throws IOException {
+        return m.readTree(read(in));
+    }
+
+    /** 将InputStream */
+    public static final <T> T readToClass(InputStream in, Class<T> tClass) throws IOException {
+        return m.readValue(read(in), tClass);
+    }
+
+    /** 包装request的输入流(且必须包装，转换速度有很大的区别)，必须设置UTF-8编码，不然中文会乱码 */
+    public static final BufferedReader read(InputStream in) throws UnsupportedEncodingException {
+        return new BufferedReader(new InputStreamReader(in, Constant.ENCODE_UTF8));
+    }
 }

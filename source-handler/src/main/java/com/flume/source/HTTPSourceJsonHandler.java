@@ -1,5 +1,7 @@
-package com.flume;
+package com.flume.source;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.flume.Constant;
 import org.apache.commons.collections.MapUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
@@ -10,10 +12,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.BufferedReader;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.*;
 
+
+/**
+ * flume 处理HTTP请求源的数据.
+ *
+ * @author pengming  
+ * @date 2016年11月15日 18:38:54
+ * @description
+ */
 public class HTTPSourceJsonHandler implements HTTPSourceHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(HTTPSourceJsonHandler.class);
@@ -23,27 +31,10 @@ public class HTTPSourceJsonHandler implements HTTPSourceHandler {
      */
     @Override
     public List<Event> getEvents(HttpServletRequest request) throws Exception {
-        BufferedReader reader = request.getReader();
-        String charset = request.getCharacterEncoding();
-        //UTF-8 is default for JSON. If no charset is specified, UTF-8 is to
-        //be assumed.
-        if (charset == null) {
-            LOG.debug("Charset is null, default charset of UTF-8 will be used.");
-            charset = "UTF-8";
-        } else if (!(charset.equalsIgnoreCase("utf-8")
-                || charset.equalsIgnoreCase("utf-16")
-                || charset.equalsIgnoreCase("utf-32"))) {
-            LOG.error("Unsupported character set in request {}. "
-                    + "JSON handler supports UTF-8, "
-                    + "UTF-16 and UTF-32 only.", charset);
-            throw new UnsupportedCharsetException("JSON handler supports UTF-8, "
-                    + "UTF-16 and UTF-32 only.");
-        }
+        long start = System.currentTimeMillis();
+        String charset = Constant.ENCODE_UTF8;
+        request.setCharacterEncoding(charset);
 
-        /*
-         * Gson throws Exception if the data is not parseable to JSON.
-         * Need not catch it since the source will catch it and return error.
-         */
         List<Event> eventList = new ArrayList<Event>(1);
         JSONEvent je = new JSONEvent();
         eventList.add(je);
@@ -60,21 +51,17 @@ public class HTTPSourceJsonHandler implements HTTPSourceHandler {
         // 设置主体
         byte[] body = new byte[0];
         if (request.getMethod().equals("POST")) {
-            BufferedReader br = new BufferedReader(reader);
-            StringBuffer content = new StringBuffer();
-            String item = "";
-            while ((item = br.readLine()) != null) {
-                content.append(item);
-            }
-            body = content.toString().getBytes(charset);
+            JsonNode jsonNode = JackSonUtilities.readJsonNode(request.getInputStream());
+            body = jsonNode.toString().getBytes();
         } else if (request.getMethod().equals("GET") && MapUtils.isNotEmpty(request.getParameterMap())){
             Map<String, String> parameterMap = request.getParameterMap();
-            String content = JackSonUtilities.toJsonString(parameterMap);
-            body = content.getBytes(charset);
+            body = JackSonUtilities.toBytes(parameterMap);
         }
         je.setBody(body);
         je.setCharset(charset);
 
+        long end = System.currentTimeMillis();
+        LOG.info("source event 处理时间：[ " + (end - start) + " ] ms");
 
         return getSimpleEvents(eventList);
     }
