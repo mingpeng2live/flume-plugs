@@ -1,25 +1,19 @@
 package com.flume.sink;
 
+import com.flume.Constant;
 import com.flume.source.JackSonUtilities;
-import com.google.common.base.Optional;
-import org.apache.avro.io.BinaryEncoder;
-import org.apache.avro.specific.SpecificDatumReader;
-import org.apache.avro.specific.SpecificDatumWriter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flume.*;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.conf.ConfigurationException;
 import org.apache.flume.conf.LogPrivacyUtil;
-import org.apache.flume.instrumentation.kafka.KafkaSinkCounter;
 import org.apache.flume.sink.AbstractSink;
 import org.apache.flume.sink.kafka.KafkaSinkConstants;
-import org.apache.flume.source.avro.AvroFlumeEvent;
 import org.apache.kafka.clients.producer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.util.*;
-import java.util.concurrent.Future;
 
 import static org.apache.flume.sink.kafka.KafkaSinkConstants.*;
 
@@ -67,8 +61,8 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
     private String topic;
     private int batchSize;
-    private List<Future<RecordMetadata>> kafkaFutures;
-    private KafkaSinkCounter counter;
+//    private List<Future<RecordMetadata>> kafkaFutures;
+//    private KafkaSinkCounter counter;
     private boolean useAvroEventFormat;
     private String partitionHeader = null;
     private Integer staticPartitionId = null;
@@ -88,8 +82,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
             transaction = channel.getTransaction();
             transaction.begin();
 
-            kafkaFutures.clear();
-            long batchStartTime = System.nanoTime();
+//            kafkaFutures.clear();
+//            long batchStartTime = System.nanoTime();
+            long st = System.currentTimeMillis();
             for (; processedEvents < batchSize; processedEvents += 1) {
                 event = channel.take();
 
@@ -97,9 +92,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
                     // no events available in channel
                     if (processedEvents == 0) {
                         result = Status.BACKOFF;
-                        counter.incrementBatchEmptyCount();
+//                        counter.incrementBatchEmptyCount();
                     } else {
-                        counter.incrementBatchUnderflowCount();
+//                        counter.incrementBatchUnderflowCount();
                     }
                     break;
                 }
@@ -108,14 +103,14 @@ public class KafkaSink extends AbstractSink implements Configurable {
                 Map<String, String> headers = event.getHeaders();
 
                 eventTopic = headers.get(TOPIC_HEADER);
-                if (eventTopic == null) {
-                    eventTopic = topic;
-                }
                 eventKey = headers.get(KEY_HEADER);
+
+                /** 默认为空,则发送消息到默认的topic, 如果有值则不发送消息到默认的topic 与 headers.get(TOPIC_HEADER); 共用 */
+                String sendDefaultTopic = headers.get(Constant.SEND_DEFAULT_TOPIC);
+
                 if (logger.isTraceEnabled()) {
                     if (LogPrivacyUtil.allowLogRawData()) {
-                        logger.trace("{Event} " + eventTopic + " : " + eventKey + " : "
-                                + new String(eventBody, "UTF-8"));
+                        logger.trace("{Event} " + eventTopic + " : " + eventKey + " : " + new String(eventBody, "UTF-8"));
                     } else {
                         logger.trace("{Event} " + eventTopic + " : " + eventKey);
                     }
@@ -138,34 +133,50 @@ public class KafkaSink extends AbstractSink implements Configurable {
                             partitionId = Integer.parseInt(headerVal);
                         }
                     }
-                    if (partitionId != null) {
-                        record = new ProducerRecord<String, byte[]>(eventTopic, partitionId, eventKey, serializeEvent(event, useAvroEventFormat));
-                    } else {
-                        record = new ProducerRecord<String, byte[]>(eventTopic, eventKey, serializeEvent(event, useAvroEventFormat));
+                    /** 发送到指定topic */
+                    if (StringUtils.isNotEmpty(eventTopic)) {
+                        if (partitionId != null) {
+                            record = new ProducerRecord<String, byte[]>(eventTopic, partitionId, eventKey, serializeEvent(event, useAvroEventFormat));
+                        } else {
+                            record = new ProducerRecord<String, byte[]>(eventTopic, eventKey, serializeEvent(event, useAvroEventFormat));
+                        }
+                        producer.send(record);
                     }
-                    kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
+                    /** 发送到默认topic */
+                    if (StringUtils.isEmpty(sendDefaultTopic)) {
+                        if (partitionId != null) {
+                            record = new ProducerRecord<String, byte[]>(topic, partitionId, eventKey, serializeEvent(event, useAvroEventFormat));
+                        } else {
+                            record = new ProducerRecord<String, byte[]>(topic, eventKey, serializeEvent(event, useAvroEventFormat));
+                        }
+                        producer.send(record);
+                    }
+//                    kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
                 } catch (NumberFormatException ex) {
-                    throw new EventDeliveryException("Non integer partition id specified", ex);
+                    logger.error("Non integer partition id specified", ex);
                 } catch (Exception ex) {
                     // N.B. The producer.send() method throws all sorts of RuntimeExceptions
                     // Catching Exception here to wrap them neatly in an EventDeliveryException
                     // which is what our consumers will expect
-                    throw new EventDeliveryException("Could not send event", ex);
+                    logger.error("Could not send event", ex);
                 }
             }
 
             //Prevent linger.ms from holding the batch
             producer.flush();
+            long end = System.currentTimeMillis();
+
+            logger.info("sum #{}, time #{} ms", processedEvents, (end - st));
 
             // publish batch and commit.
-            if (processedEvents > 0) {
-                for (Future<RecordMetadata> future : kafkaFutures) {
-                    future.get();
-                }
-                long endTime = System.nanoTime();
-                counter.addToKafkaEventSendTimer((endTime - batchStartTime) / (1000 * 1000));
-                counter.addToEventDrainSuccessCount(Long.valueOf(kafkaFutures.size()));
-            }
+//            if (processedEvents > 0) {
+//                for (Future<RecordMetadata> future : kafkaFutures) {
+//                    future.get();
+//                }
+//                long endTime = System.nanoTime();
+//                counter.addToKafkaEventSendTimer((endTime - batchStartTime) / (1000 * 1000));
+//                counter.addToEventDrainSuccessCount(Long.valueOf(kafkaFutures.size()));
+//            }
 
             transaction.commit();
 
@@ -174,9 +185,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
             result = Status.BACKOFF;
             if (transaction != null) {
                 try {
-                    kafkaFutures.clear();
+//                    kafkaFutures.clear();
                     transaction.rollback();
-                    counter.incrementRollbackCount();
+//                    counter.incrementRollbackCount();
                 } catch (Exception e) {
                     logger.error("Transaction rollback failed", e);
                 }
@@ -193,15 +204,16 @@ public class KafkaSink extends AbstractSink implements Configurable {
     public synchronized void start() {
         // instantiate the producer
         producer = new KafkaProducer<String,byte[]>(kafkaProps);
-        counter.start();
+//        counter.start();
         super.start();
     }
 
     @Override
     public synchronized void stop() {
         producer.close();
-        counter.stop();
-        logger.info("Kafka Sink {} stopped. Metrics: {}", getName(), counter);
+//        counter.stop();
+        logger.info("Kafka Sink {} stopped", getName());
+//        logger.info("Kafka Sink {} stopped. Metrics: {}", getName(), counter);
         super.stop();
     }
 
@@ -250,7 +262,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.debug(KafkaSinkConstants.AVRO_EVENT + " set to: {}", useAvroEventFormat);
         }
 
-        kafkaFutures = new LinkedList<Future<RecordMetadata>>();
+//        kafkaFutures = new LinkedList<Future<RecordMetadata>>();
 
         String bootStrapServers = context.getString(BOOTSTRAP_SERVERS_CONFIG);
         if (bootStrapServers == null || bootStrapServers.isEmpty()) {
@@ -263,9 +275,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.debug("Kafka producer properties: {}", kafkaProps);
         }
 
-        if (counter == null) {
-            counter = new KafkaSinkCounter(getName());
-        }
+//        if (counter == null) {
+//            counter = new KafkaSinkCounter(getName());
+//        }
     }
 
     private void translateOldProps(Context ctx) {
@@ -346,13 +358,14 @@ public class KafkaSink extends AbstractSink implements Configurable {
      */
     public byte[] serializeEvent(Event event, boolean useAvroEventFormat) throws Exception {
         byte[] bytes;
+        byte[] body = event.getBody();
         if (useAvroEventFormat) {
             Map<String, Object> eventItem = new HashMap<>();
             eventItem.put("headers", event.getHeaders());
-            eventItem.put("body", JackSonUtilities.readJsonNode(event.getBody()));
+            eventItem.put("body", body != null && body.length > 0 ? JackSonUtilities.readJsonNode(body) : body);
             bytes = JackSonUtilities.toBytes(eventItem);
         } else {
-            bytes = event.getBody();
+            bytes = body;
         }
         logger.info("push: " + JackSonUtilities.toJsonString(event.getHeaders()));
         return bytes;

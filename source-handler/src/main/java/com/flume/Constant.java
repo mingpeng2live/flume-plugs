@@ -4,6 +4,10 @@ import java.util.regex.Pattern;
 
 public class Constant {
 
+
+	/** 统一的编码. */
+	public static String SEND_DEFAULT_TOPIC = "sendDefaultTopic";
+
 	/** 统一的编码. */
 	public static String ENCODE_GBK = "GBK";
 
