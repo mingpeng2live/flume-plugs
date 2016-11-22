@@ -22,16 +22,15 @@ import java.util.*;
  * @date 2016年11月15日 18:38:54
  * @description
  */
-public class HTTPSourceJsonHandler implements HTTPSourceHandler {
+public class JsonHandler implements HTTPSourceHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(HTTPSourceJsonHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JsonHandler.class);
 
     /**
      * {@inheritDoc}
      */
     @Override
     public List<Event> getEvents(HttpServletRequest request) throws Exception {
-        long start = System.currentTimeMillis();
         String charset = Constant.ENCODE_UTF8;
         request.setCharacterEncoding(charset);
 
@@ -59,9 +58,6 @@ public class HTTPSourceJsonHandler implements HTTPSourceHandler {
         }
         je.setBody(body);
         je.setCharset(charset);
-
-        long end = System.currentTimeMillis();
-        LOG.info("source event 处理时间：[ " + (end - start) + " ] ms");
 
         return getSimpleEvents(eventList);
     }
