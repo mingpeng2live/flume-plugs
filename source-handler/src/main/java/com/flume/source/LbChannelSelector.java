@@ -92,7 +92,6 @@ public class LbChannelSelector extends AbstractChannelSelector {
         return defaultChannels;
     }
 
-
     public synchronized List<Channel> getLbChannels() {
         List<Channel> channels = new ArrayList<>(1);
         channels.add(loadBalanceChannels.get(index));
@@ -123,18 +122,21 @@ public class LbChannelSelector extends AbstractChannelSelector {
         this.headerName = context.getString(CONFIG_MULTIPLEX_HEADER_NAME, DEFAULT_MULTIPLEX_HEADER);
         /** 默认处理事件的channel */
         defaultChannels = getChannelListFromNames(context.getString(CONFIG_DEFAULT_CHANNEL), channelNameMap);
+        LOG.info("默认处理 defaultChannelsSize: " + defaultChannels.size());
         if (CollectionUtils.isEmpty(defaultChannels)) {
             defaultChannels = EMPTY_LIST;
         }
 
         /** 配置负载均衡,轮询的channel */
         loadBalanceChannels = getChannelListFromNames(context.getString(CONFIG_PREFIX_POLLING), channelNameMap);
+        LOG.info("轮询负载 loadBalanceSize: " + loadBalanceChannels.size());
         if (CollectionUtils.isEmpty(loadBalanceChannels)) {
             loadBalanceChannels = EMPTY_LIST;
         }
 
         /** 复制事件到对应的channel 中 */
         copyChannels = getChannelListFromNames(context.getString(CONFIG_PREFIX_COPY), channelNameMap);
+        LOG.info("复制处理 copyChannelsSize: " + copyChannels.size());
         if (CollectionUtils.isEmpty(copyChannels)) {
             copyChannels = EMPTY_LIST;
         }
