@@ -162,11 +162,14 @@ public class KafkaSink extends AbstractSink implements Configurable {
                 }
             }
 
+
+            long end = System.currentTimeMillis();
             //Prevent linger.ms from holding the batch
             producer.flush();
-            long end = System.currentTimeMillis();
 
-            logger.info("sum #{}, time #{} ms", processedEvents, (end - st));
+            long flush = System.currentTimeMillis();
+
+            logger.info("sum #{}, time #{} ms, flush #{} ms", new Object[]{processedEvents, (flush - end), (end - st)});
 
             // publish batch and commit.
 //            if (processedEvents > 0) {

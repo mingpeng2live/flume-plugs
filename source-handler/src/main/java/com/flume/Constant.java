@@ -4,10 +4,6 @@ import java.util.regex.Pattern;
 
 public class Constant {
 
-
-	/** 统一的编码. */
-	public static String SEND_DEFAULT_TOPIC = "sendDefaultTopic";
-
 	/** 统一的编码. */
 	public static String ENCODE_GBK = "GBK";
 
@@ -63,6 +59,19 @@ public class Constant {
 
 	/** The DAT e_ time. */
 	public static String DATE_TIME = "yyyy-MM-dd HH:mm:ss";
+
+
+
+    // ----------------------  下面为http 请求时 头可以设置的属性 ---------------------
+
+	/** 前端cookie ID. */
+	public static String UID = "admckid";
+
+    /** isBatch 空或不存在则表示当前请求时单事件, 存在为多事件处理,目前未对多事件进行约定处理 */
+	public static String ISBATCH = "isBatch";
+
+    /** 默认为空,则发送消息到默认的topic, 如果有值则不发送消息到默认的topic 与 KafkaSink headers.get(TOPIC_HEADER); 共用. */
+    public static String SEND_DEFAULT_TOPIC = "sendDefaultTopic";
 
 
 }

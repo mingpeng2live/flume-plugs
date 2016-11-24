@@ -5,8 +5,7 @@ import com.flume.Constant;
 import org.apache.commons.collections.MapUtils;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
-import org.apache.flume.event.EventBuilder;
-import org.apache.flume.event.JSONEvent;
+import org.apache.flume.event.SimpleEvent;
 import org.apache.flume.source.http.HTTPSourceHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +15,7 @@ import java.util.*;
 
 
 /**
- * flume 处理HTTP请求源的数据.
+ * flume 处理HTTP请求源的数据 转变为内置事件.
  *
  * @author pengming  
  * @date 2016年11月15日 18:38:54
@@ -31,13 +30,11 @@ public class JsonHandler implements HTTPSourceHandler {
      */
     @Override
     public List<Event> getEvents(HttpServletRequest request) throws Exception {
-        String charset = Constant.ENCODE_UTF8;
-        request.setCharacterEncoding(charset);
-
         List<Event> eventList = new ArrayList<Event>(1);
-        JSONEvent je = new JSONEvent();
+        SimpleEvent je = new SimpleEvent();
         eventList.add(je);
-        // 获取请求中的headers
+
+        /** 获取请求中的headers */
         Map<String, String> headers = new HashMap<String, String>();
         Enumeration headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
@@ -45,9 +42,13 @@ public class JsonHandler implements HTTPSourceHandler {
             String value = request.getHeader(key);
             headers.put(key, value);
         }
+        /** 当请求中没有cookie ID 时, 在HTTPSource中设置后需要将该值设置到 header中 */
+        if (request.getAttribute(Constant.UID) != null) {
+            headers.put(Constant.UID, (String) request.getAttribute(Constant.UID));
+        }
         je.setHeaders(headers);
 
-        // 设置主体
+        /** 设置主体 */
         byte[] body = new byte[0];
         if (request.getMethod().equals("POST")) {
             JsonNode jsonNode = JackSonUtilities.readJsonNode(request.getInputStream());
@@ -57,20 +58,12 @@ public class JsonHandler implements HTTPSourceHandler {
             body = JackSonUtilities.toBytes(parameterMap);
         }
         je.setBody(body);
-        je.setCharset(charset);
 
-        return getSimpleEvents(eventList);
+        return eventList;
     }
 
     @Override
     public void configure(Context context) {
     }
 
-    private List<Event> getSimpleEvents(List<Event> events) {
-        List<Event> newEvents = new ArrayList<Event>(events.size());
-        for (Event e : events) {
-            newEvents.add(EventBuilder.withBody(e.getBody(), e.getHeaders()));
-        }
-        return newEvents;
-    }
 }
