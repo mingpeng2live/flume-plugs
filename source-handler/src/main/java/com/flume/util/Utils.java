@@ -72,7 +72,6 @@ public class Utils {
      */
     public static void addCookie(HttpServletResponse response, String name, String value, int maxAge){
         String valueNew = encode(value);
-        logger.info(name + "\tvalue: " + value + "\tnew: " + valueNew);
         Cookie cookie = new Cookie(name, valueNew);
         cookie.setPath("/");
         if(maxAge>0) {

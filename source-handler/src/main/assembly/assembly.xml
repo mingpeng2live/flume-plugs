@@ -13,6 +13,15 @@
 	</dependencySets>
 	<fileSets>
 		<fileSet>
+			<directory>src/main/script</directory>
+			<outputDirectory>./</outputDirectory>
+			<includes>
+				<include>service.sh</include>
+			</includes>
+			<lineEnding>unix</lineEnding>
+			<filtered>true</filtered>
+		</fileSet>
+		<fileSet>
 			<directory>${project.build.directory}</directory>
 			<outputDirectory>plugins.d/pm/lib</outputDirectory>
 			<includes>

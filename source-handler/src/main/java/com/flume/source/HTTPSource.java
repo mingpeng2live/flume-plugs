@@ -209,7 +209,7 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
         public void doPost(HttpServletRequest request, HttpServletResponse response)
                 throws IOException {
             request.setCharacterEncoding(Constant.ENCODE_UTF8);
-            List<Event> events = Collections.emptyList(); //create empty list
+            List<Event> events = null; //create empty list
             try {
                 setCookieId(request, response);
                 events = handler.getEvents(request);
@@ -235,7 +235,6 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
                 } else  {
                     getChannelProcessor().processEvent(events.get(0));
                 }
-
             } catch (ChannelException ex) {
                 LOG.warn("Error appending event to channel. Channel might be full. Consider increasing the channel capacity or make sure the sinks perform faster.", ex);
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Error appending event to channel. Channel might be full." + ex.getMessage());
@@ -264,7 +263,6 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
                     break;
                 }
                 String admckid = Utils.generateAdmckid();
-                LOG.info("admckid: " + admckid);
                 Utils.addCookie(response, Constant.UID, admckid, maxAge);
                 request.setAttribute(Constant.UID, admckid);
             }
