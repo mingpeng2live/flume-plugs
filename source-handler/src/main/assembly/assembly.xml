@@ -18,8 +18,8 @@
 			<includes>
 				<include>service.sh</include>
 			</includes>
-			<lineEnding>unix</lineEnding>
-			<filtered>true</filtered>
+			<!--<lineEnding>unix</lineEnding>-->
+			<!--<filtered>true</filtered>-->
 		</fileSet>
 		<fileSet>
 			<directory>${project.build.directory}</directory>

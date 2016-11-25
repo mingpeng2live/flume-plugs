@@ -7,6 +7,7 @@ import org.apache.flume.*;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.conf.ConfigurationException;
 import org.apache.flume.conf.LogPrivacyUtil;
+import org.apache.flume.instrumentation.kafka.KafkaSinkCounter;
 import org.apache.flume.sink.AbstractSink;
 import org.apache.flume.sink.kafka.KafkaSinkConstants;
 import org.apache.kafka.clients.producer.*;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.Future;
 
 import static org.apache.flume.sink.kafka.KafkaSinkConstants.*;
 
@@ -61,8 +63,12 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
     private String topic;
     private int batchSize;
-//    private List<Future<RecordMetadata>> kafkaFutures;
-//    private KafkaSinkCounter counter;
+
+
+    private List<Future<RecordMetadata>> kafkaFutures;
+    private KafkaSinkCounter counter;
+
+
     private boolean useAvroEventFormat;
     private String partitionHeader = null;
     private Integer staticPartitionId = null;
@@ -82,9 +88,13 @@ public class KafkaSink extends AbstractSink implements Configurable {
             transaction = channel.getTransaction();
             transaction.begin();
 
-//            kafkaFutures.clear();
-//            long batchStartTime = System.nanoTime();
+            kafkaFutures.clear();
+            long batchStartTime = System.nanoTime();
+
+
             long st = System.currentTimeMillis();
+
+
             for (; processedEvents < batchSize; processedEvents += 1) {
                 event = channel.take();
 
@@ -92,9 +102,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
                     // no events available in channel
                     if (processedEvents == 0) {
                         result = Status.BACKOFF;
-//                        counter.incrementBatchEmptyCount();
+                        counter.incrementBatchEmptyCount();
                     } else {
-//                        counter.incrementBatchUnderflowCount();
+                        counter.incrementBatchUnderflowCount();
                     }
                     break;
                 }
@@ -134,24 +144,24 @@ public class KafkaSink extends AbstractSink implements Configurable {
                         }
                     }
                     /** 发送到指定topic */
+                    byte[] bytes = serializeEvent(event, useAvroEventFormat);
                     if (StringUtils.isNotEmpty(eventTopic)) {
                         if (partitionId != null) {
-                            record = new ProducerRecord<String, byte[]>(eventTopic, partitionId, eventKey, serializeEvent(event, useAvroEventFormat));
+                            record = new ProducerRecord<String, byte[]>(eventTopic, partitionId, eventKey, bytes);
                         } else {
-                            record = new ProducerRecord<String, byte[]>(eventTopic, eventKey, serializeEvent(event, useAvroEventFormat));
+                            record = new ProducerRecord<String, byte[]>(eventTopic, eventKey, bytes);
                         }
-                        producer.send(record);
+                        kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
                     }
                     /** 发送到默认topic */
                     if (StringUtils.isEmpty(sendDefaultTopic)) {
                         if (partitionId != null) {
-                            record = new ProducerRecord<String, byte[]>(topic, partitionId, eventKey, serializeEvent(event, useAvroEventFormat));
+                            record = new ProducerRecord<String, byte[]>(topic, partitionId, eventKey, bytes);
                         } else {
-                            record = new ProducerRecord<String, byte[]>(topic, eventKey, serializeEvent(event, useAvroEventFormat));
+                            record = new ProducerRecord<String, byte[]>(topic, eventKey, bytes);
                         }
-                        producer.send(record);
+                        kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
                     }
-//                    kafkaFutures.add(producer.send(record, new SinkCallback(startTime)));
                 } catch (NumberFormatException ex) {
                     logger.error("Non integer partition id specified", ex);
                 } catch (Exception ex) {
@@ -162,7 +172,6 @@ public class KafkaSink extends AbstractSink implements Configurable {
                 }
             }
 
-
             long end = System.currentTimeMillis();
             //Prevent linger.ms from holding the batch
             producer.flush();
@@ -172,14 +181,14 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.info("sum #{}, time #{} ms, flush #{} ms", new Object[]{processedEvents, (flush - end), (end - st)});
 
             // publish batch and commit.
-//            if (processedEvents > 0) {
-//                for (Future<RecordMetadata> future : kafkaFutures) {
-//                    future.get();
-//                }
-//                long endTime = System.nanoTime();
-//                counter.addToKafkaEventSendTimer((endTime - batchStartTime) / (1000 * 1000));
-//                counter.addToEventDrainSuccessCount(Long.valueOf(kafkaFutures.size()));
-//            }
+            if (processedEvents > 0) {
+                for (Future<RecordMetadata> future : kafkaFutures) {
+                    future.get();
+                }
+                long endTime = System.nanoTime();
+                counter.addToKafkaEventSendTimer((endTime - batchStartTime) / (1000 * 1000));
+                counter.addToEventDrainSuccessCount(Long.valueOf(kafkaFutures.size()));
+            }
 
             transaction.commit();
 
@@ -188,9 +197,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
             result = Status.BACKOFF;
             if (transaction != null) {
                 try {
-//                    kafkaFutures.clear();
+                    kafkaFutures.clear();
                     transaction.rollback();
-//                    counter.incrementRollbackCount();
+                    counter.incrementRollbackCount();
                 } catch (Exception e) {
                     logger.error("Transaction rollback failed", e);
                 }
@@ -207,16 +216,16 @@ public class KafkaSink extends AbstractSink implements Configurable {
     public synchronized void start() {
         // instantiate the producer
         producer = new KafkaProducer<String,byte[]>(kafkaProps);
-//        counter.start();
+        counter.start();
         super.start();
     }
 
     @Override
     public synchronized void stop() {
         producer.close();
-//        counter.stop();
-        logger.info("Kafka Sink {} stopped", getName());
-//        logger.info("Kafka Sink {} stopped. Metrics: {}", getName(), counter);
+        counter.stop();
+//        logger.info("Kafka Sink {} stopped", getName());
+        logger.info("Kafka Sink {} stopped. Metrics: {}", getName(), counter);
         super.stop();
     }
 
@@ -255,8 +264,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.debug("Using batch size: {}", batchSize);
         }
 
-        useAvroEventFormat = context.getBoolean(KafkaSinkConstants.AVRO_EVENT,
-                KafkaSinkConstants.DEFAULT_AVRO_EVENT);
+        useAvroEventFormat = context.getBoolean(KafkaSinkConstants.AVRO_EVENT, KafkaSinkConstants.DEFAULT_AVRO_EVENT);
 
         partitionHeader = context.getString(KafkaSinkConstants.PARTITION_HEADER_NAME);
         staticPartitionId = context.getInteger(KafkaSinkConstants.STATIC_PARTITION_CONF);
@@ -265,7 +273,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.debug(KafkaSinkConstants.AVRO_EVENT + " set to: {}", useAvroEventFormat);
         }
 
-//        kafkaFutures = new LinkedList<Future<RecordMetadata>>();
+        kafkaFutures = new LinkedList<Future<RecordMetadata>>();
 
         String bootStrapServers = context.getString(BOOTSTRAP_SERVERS_CONFIG);
         if (bootStrapServers == null || bootStrapServers.isEmpty()) {
@@ -278,9 +286,9 @@ public class KafkaSink extends AbstractSink implements Configurable {
             logger.debug("Kafka producer properties: {}", kafkaProps);
         }
 
-//        if (counter == null) {
-//            counter = new KafkaSinkCounter(getName());
-//        }
+        if (counter == null) {
+            counter = new KafkaSinkCounter(getName());
+        }
     }
 
     private void translateOldProps(Context ctx) {
@@ -298,8 +306,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
                 throw new ConfigurationException("Bootstrap Servers must be specified");
             } else {
                 ctx.put(BOOTSTRAP_SERVERS_CONFIG, brokerList);
-                logger.warn("{} is deprecated. Please use the parameter {}",
-                        BROKER_LIST_FLUME_KEY, BOOTSTRAP_SERVERS_CONFIG);
+                logger.warn("{} is deprecated. Please use the parameter {}", BROKER_LIST_FLUME_KEY, BOOTSTRAP_SERVERS_CONFIG);
             }
         }
 
@@ -314,8 +321,7 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
         // Acks
         if (!(ctx.containsKey(KAFKA_PRODUCER_PREFIX + ProducerConfig.ACKS_CONFIG))) {
-            String requiredKey = ctx.getString(
-                    KafkaSinkConstants.REQUIRED_ACKS_FLUME_KEY);
+            String requiredKey = ctx.getString(KafkaSinkConstants.REQUIRED_ACKS_FLUME_KEY);
             if (!(requiredKey == null) && !(requiredKey.isEmpty())) {
                 ctx.put(KAFKA_PRODUCER_PREFIX + ProducerConfig.ACKS_CONFIG, requiredKey);
                 logger.warn("{} is deprecated. Please use the parameter {}", REQUIRED_ACKS_FLUME_KEY,
