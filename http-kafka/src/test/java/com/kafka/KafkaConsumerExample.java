@@ -4,6 +4,7 @@ import kafka.consumer.ConsumerConfig;
 import kafka.consumer.ConsumerIterator;
 import kafka.consumer.KafkaStream;
 import kafka.javaapi.consumer.ConsumerConnector;
+import kafka.message.MessageAndMetadata;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,13 +31,15 @@ public class KafkaConsumerExample {
         Map<String, Integer> topicCountMap = new HashMap<>();
         int localConsumerCount = 1;
         topicCountMap.put(TOPIC, localConsumerCount);
+//        topicCountMap.put("test", localConsumerCount);
 
         Map<String, List<KafkaStream<byte[], byte[]>>> consumerMap = consumerConnector.createMessageStreams(topicCountMap);
         List<KafkaStream<byte[], byte[]>> streams = consumerMap.get(TOPIC);
         streams.stream().forEach(stream -> {
             ConsumerIterator<byte[], byte[]> it = stream.iterator();
             while (it.hasNext()) {
-                System.out.println(new String(it.next().message()));
+                MessageAndMetadata<byte[], byte[]> next = it.next();
+                System.out.printf("topic = %s, offset = %d, key = %s, value = %s\n", next.topic(), next.offset(), next.key(), new String(next.message()));
             }
         });
 
