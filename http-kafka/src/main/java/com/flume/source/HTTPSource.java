@@ -211,6 +211,7 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
             request.setCharacterEncoding(Constant.ENCODE_UTF8);
             List<Event> events = null; //create empty list
             try {
+                /** 设置cookie值 */
                 setCookieId(request, response);
                 events = handler.getEvents(request);
                 if (CollectionUtils.isEmpty(events)) {

@@ -2,14 +2,14 @@ package com.flume.sink;
 
 import com.flume.Constant;
 import com.flume.source.JackSonUtilities;
+import com.flume.util.KafkaSinkConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flume.*;
 import org.apache.flume.conf.Configurable;
 import org.apache.flume.conf.ConfigurationException;
-import org.apache.flume.conf.LogPrivacyUtil;
+import com.flume.util.LogPrivacyUtil;
 import org.apache.flume.instrumentation.kafka.KafkaSinkCounter;
 import org.apache.flume.sink.AbstractSink;
-import org.apache.flume.sink.kafka.KafkaSinkConstants;
 import org.apache.kafka.clients.producer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.Future;
 
-import static org.apache.flume.sink.kafka.KafkaSinkConstants.*;
+import static com.flume.util.KafkaSinkConstants.*;
 
 /**
  * A Flume Sink that can publish messages to Kafka.
@@ -65,8 +65,8 @@ public class KafkaSink extends AbstractSink implements Configurable {
     private int batchSize;
 
 
-    private List<Future<RecordMetadata>> kafkaFutures;
     private KafkaSinkCounter counter;
+    private List<Future<RecordMetadata>> kafkaFutures;
 
 
     private boolean useAvroEventFormat;
@@ -174,7 +174,8 @@ public class KafkaSink extends AbstractSink implements Configurable {
 
             long end = System.currentTimeMillis();
             //Prevent linger.ms from holding the batch
-            producer.flush();
+//            producer.flush();
+
 
             long flush = System.currentTimeMillis();
 

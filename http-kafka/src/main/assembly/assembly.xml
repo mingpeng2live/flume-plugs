@@ -31,9 +31,16 @@
         </fileSet>
 		<fileSet>
 			<directory>${project.build.directory}</directory>
-			<outputDirectory>plugins.d/pm/lib</outputDirectory>
+			<outputDirectory>log</outputDirectory>
 			<includes>
-				<include>*.jar</include>
+				<include></include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${project.build.directory}</directory>
+			<outputDirectory>plugins.d/pm/libext</outputDirectory>
+			<includes>
+				<include></include>
 			</includes>
 		</fileSet>
         <fileSet>
