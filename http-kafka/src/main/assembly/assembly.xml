@@ -15,11 +15,12 @@
 		<fileSet>
 			<directory>src/main/script</directory>
 			<outputDirectory>./</outputDirectory>
+			<lineEnding>unix</lineEnding>
+			<fileMode>0755</fileMode>
 			<includes>
 				<include>service.sh</include>
 			</includes>
-			<!--<lineEnding>unix</lineEnding>-->
-			<!--<filtered>true</filtered>-->
+			<filtered>true</filtered>
 		</fileSet>
         <fileSet>
             <directory>src/main/script</directory>
@@ -38,9 +39,9 @@
 		</fileSet>
 		<fileSet>
 			<directory>${project.build.directory}</directory>
-			<outputDirectory>plugins.d/pm/libext</outputDirectory>
+			<outputDirectory>plugins.d/pm/lib</outputDirectory>
 			<includes>
-				<include></include>
+				<include>*.jar</include>
 			</includes>
 		</fileSet>
         <fileSet>
