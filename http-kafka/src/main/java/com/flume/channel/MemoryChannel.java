@@ -87,8 +87,7 @@ public class MemoryChannel extends BasicChannelSemantics {
             synchronized (queueLock) {
                 event = queue.poll();
             }
-            Preconditions.checkNotNull(event, "Queue.poll returned NULL despite semaphore " +
-                    "signalling existence of entry");
+            Preconditions.checkNotNull(event, "Queue.poll returned NULL despite semaphore signalling existence of entry");
             takeList.put(event);
 
             int eventByteSize = (int) Math.ceil(estimateEventSize(event) / byteCapacitySlotSize);
