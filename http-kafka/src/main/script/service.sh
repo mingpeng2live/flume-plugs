@@ -18,7 +18,7 @@ function start(){
     echo "进程数:$num"
     if [ "$num" = "0" ] ; then
        #eval nohup java -Xmx512m -jar -DplanNames=$planNames -DconfigPath=$CONFIG_PATH $jarpath/$JAR `echo $@|cut -d " " -f3-$#` >> /dev/null 2>&1 &
-       eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,LOGFILE -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> /dev/null 2>&1 &
+       eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,LOGFILE -Dflume.log.dir=$path/logs -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> /dev/null 2>&1 &
        echo "启动成功...."
        tail -f $path/logs/flume.log
     else

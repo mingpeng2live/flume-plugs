@@ -39,13 +39,6 @@
 		</fileSet>
 		<fileSet>
 			<directory>${project.build.directory}</directory>
-			<outputDirectory>log</outputDirectory>
-			<includes>
-				<include></include>
-			</includes>
-		</fileSet>
-		<fileSet>
-			<directory>${project.build.directory}</directory>
 			<outputDirectory>plugins.d/pm/lib</outputDirectory>
 			<includes>
 				<include>*.jar</include>
