@@ -17,13 +17,10 @@ function start(){
     num=`ps -ef|grep java|grep $JAR|wc -l`
     echo "进程数:$num"
     if [ "$num" = "0" ] ; then
-       logfile=$path/log/flume.`date +%Y%m%d`.log
-       echo $logfile
        #eval nohup java -Xmx512m -jar -DplanNames=$planNames -DconfigPath=$CONFIG_PATH $jarpath/$JAR `echo $@|cut -d " " -f3-$#` >> /dev/null 2>&1 &
-       eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,console -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> $logfile 2>&1 &
+       eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,LOGFILE -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> /dev/null 2>&1 &
        echo "启动成功...."
-       touch $logfile
-       tail -f $logfile
+       tail -f $path/logs/flume.log
     else
        echo "进程已经存在，启动失败，请检查....."
        exit 0
