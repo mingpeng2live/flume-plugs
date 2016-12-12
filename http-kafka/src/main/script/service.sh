@@ -17,13 +17,13 @@ function start(){
     num=`ps -ef|grep java|grep $JAR|wc -l`
     echo "进程数:$num"
     if [ "$num" = "0" ] ; then
-       #eval nohup java -Xmx512m -jar -DplanNames=$planNames -DconfigPath=$CONFIG_PATH $jarpath/$JAR `echo $@|cut -d " " -f3-$#` >> /dev/null 2>&1 &
-       eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,LOGFILE -Dflume.log.dir=$path/logs -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> /dev/null 2>&1 &
-       echo "启动成功...."
-       echo "日志路径: $path/logs/flume.log"
+        #eval nohup java -Xmx512m -jar -DplanNames=$planNames -DconfigPath=$CONFIG_PATH $jarpath/$JAR `echo $@|cut -d " " -f3-$#` >> /dev/null 2>&1 &
+        eval nohup flume-ng agent -c $path/conf -f $path/conf/http-test.conf -n agent -Dflume.root.logger=INFO,LOGFILE -Dflume.log.dir=$path/logs -Dflume.monitoring.type=http -Dflume.monitoring.port=34545 >> /dev/null 2>&1 &
+        echo "启动成功...."
+        echo "日志路径: $path/logs/flume.log"
     else
-       echo "进程已经存在，启动失败，请检查....."
-       exit 0
+        echo "进程已经存在，启动失败，请检查....."
+        exit 0
     fi
 }
 
@@ -31,12 +31,12 @@ function stop(){
     echo "开始stop ....."
     num=`ps -ef|grep java|grep $JAR|wc -l`
     if [ "$num" != "0" ] ; then
-     #ps -ef|grep java|grep $JAR|awk '{print $2;}'|xargs kill -9
-     # 正常停止flume
-     ps -ef|grep java|grep $JAR|awk '{print $2;}'|xargs kill
-     echo "进程已经关闭..."
+        #ps -ef|grep java|grep $JAR|awk '{print $2;}'|xargs kill -9
+        # 正常停止flume
+        ps -ef|grep java|grep $JAR|awk '{print $2;}'|xargs kill
+        echo "进程已经关闭..."
     else
-     echo "服务未启动，无需停止..."
+        echo "服务未启动，无需停止..."
     fi
 }
 
