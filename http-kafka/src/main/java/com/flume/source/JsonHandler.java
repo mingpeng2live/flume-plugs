@@ -42,20 +42,9 @@ public class JsonHandler implements HTTPSourceHandler {
         Map<String, String> headers = new HashMap<String, String>();
         Enumeration headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
-            String element = null;
-            StringBuffer value = null;
             String key = (String) headerNames.nextElement();
-            Enumeration<String> values = request.getHeaders(key);
-            for (int i = 0; values.hasMoreElements(); i++) {
-                if (i == 1) {
-                    value = new StringBuffer();
-                }
-                if (i > 0) {
-                    value.append(element+",");
-                }
-                element = values.nextElement();
-            }
-            headers.put(key, (value == null ? element : value.append(element).toString()));
+            String value = request.getHeader(key);
+            headers.put(key, value);
         }
         /** 当请求中没有cookie ID 时, 在HTTPSource中设置后需要将该值设置到 header中 */
         if (request.getAttribute(Constant.UID) != null) {
@@ -69,7 +58,7 @@ public class JsonHandler implements HTTPSourceHandler {
             JsonNode jsonNode = JackSonUtilities.readJsonNode(request.getInputStream());
             body = jsonNode.toString().getBytes();
         } else if (request.getMethod().equals("GET") && MapUtils.isNotEmpty(request.getParameterMap())){
-            Map parameterMap = request.getParameterMap();
+            Map<String, String> parameterMap = request.getParameterMap();
             body = JackSonUtilities.toBytes(parameterMap);
         }
         je.setBody(body);
