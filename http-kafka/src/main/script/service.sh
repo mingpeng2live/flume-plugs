@@ -13,7 +13,6 @@ JAR="flume"
 
 function start(){
     echo "开始启动 ...."
-    source /etc/profile
     num=`ps -ef|grep java|grep $JAR|wc -l`
     echo "进程数:$num"
     if [ "$num" = "0" ] ; then

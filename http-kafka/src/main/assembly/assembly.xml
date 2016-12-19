@@ -12,16 +12,6 @@
 		</dependencySet>
 	</dependencySets>
 	<fileSets>
-		<fileSet>
-			<directory>src/main/script</directory>
-			<outputDirectory>./</outputDirectory>
-			<lineEnding>unix</lineEnding>
-			<fileMode>0755</fileMode>
-			<includes>
-				<include>service.sh</include>
-			</includes>
-			<filtered>true</filtered>
-		</fileSet>
         <fileSet>
             <directory>src/main/script</directory>
             <outputDirectory>./conf</outputDirectory>
@@ -58,5 +48,15 @@
                 <include></include>
             </includes>
         </fileSet>
+		<fileSet>
+			<directory>src/main/script</directory>
+			<outputDirectory>./</outputDirectory>
+			<lineEnding>unix</lineEnding>
+			<fileMode>0755</fileMode>
+			<includes>
+				<include>service.sh</include>
+			</includes>
+			<filtered>true</filtered>
+		</fileSet>
 	</fileSets>
 </assembly>
