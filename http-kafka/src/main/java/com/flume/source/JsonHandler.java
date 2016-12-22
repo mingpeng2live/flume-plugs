@@ -47,8 +47,9 @@ public class JsonHandler implements HTTPSourceHandler {
             headers.put(key, value);
         }
         /** 当请求中没有cookie ID 时, 在HTTPSource中设置后需要将该值设置到 header中 */
-        if (request.getAttribute(Constant.UID) != null) {
-            headers.put(Constant.UID, (String) request.getAttribute(Constant.UID));
+        Object admckid = request.getAttribute(Constant.UID);
+        if (admckid != null) {
+            headers.put("Cookie", Constant.UID + "=" + admckid);
         }
         je.setHeaders(headers);
 

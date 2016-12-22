@@ -13,7 +13,7 @@ import java.util.Properties;
 
 public class KafkaConsumerExample {
 
-    private static final String TOPIC = "dev_tag";
+    private static final String TOPIC = "prod_tag";
 
     public static void main(String[] args) throws Exception {
         Properties props = new Properties();
