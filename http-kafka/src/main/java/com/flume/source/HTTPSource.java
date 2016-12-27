@@ -25,12 +25,15 @@ import org.mortbay.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
 import javax.net.ssl.SSLServerSocket;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.util.*;
 
@@ -198,6 +201,24 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
         LOG.info("Http source {} stopped. Metrics: {}", getName(), sourceCounter);
     }
 
+
+    private static BufferedImage image = null;
+
+    static {
+        final int width = 1;//宽
+        final int height = 1;//高
+        image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    }
+
+
+    public static void writer(OutputStream outputStream) {
+        try {
+            ImageIO.write(image, "jpg", outputStream);
+        } catch (IOException e) {
+            LOG.error("回写图片失败!", e);
+        }
+    }
+
     private class FlumeHTTPServlet extends HttpServlet {
 
         private static final long serialVersionUID = 4891924863218790344L;
@@ -245,6 +266,8 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
 
             response.setCharacterEncoding(request.getCharacterEncoding());
             response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("image/jped");
+            writer(response.getOutputStream()); // 回写图片
             response.flushBuffer();
             sourceCounter.incrementAppendBatchAcceptedCount();
             sourceCounter.addToEventAcceptedCount(events.size());

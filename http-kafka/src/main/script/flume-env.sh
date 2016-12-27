@@ -22,8 +22,8 @@
 # export JAVA_HOME=/usr/lib/jvm/java-6-sun
 
 # Give Flume more memory and pre-allocate, enable remote monitoring via JMX
-#export JAVA_OPTS="-server -Xms6144m -Xmx6144m -XX:MaxDirectMemorySize=256m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -Dcom.sun.management.jmxremote"
-export JAVA_OPTS="-server -Xms2048m -Xmx2048m -XX:MaxDirectMemorySize=256m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -Dcom.sun.management.jmxremote"
+export JAVA_OPTS="-server -Xms6144m -Xmx6144m -XX:MaxDirectMemorySize=256m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -Dcom.sun.management.jmxremote"
+#export JAVA_OPTS="-server -Xms2048m -Xmx2048m -XX:MaxDirectMemorySize=256m -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -Dcom.sun.management.jmxremote"
 
 # Let Flume write raw event data and configuration information to its log files for debugging
 # purposes. Enabling these flags is not recommended in production,
