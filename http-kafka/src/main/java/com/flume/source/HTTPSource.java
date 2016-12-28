@@ -5,6 +5,7 @@ import com.flume.util.Utils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flume.ChannelException;
 import org.apache.flume.Context;
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -204,16 +206,17 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
 
     private static BufferedImage image = null;
 
+    private static byte[] imageByte = new byte[0];
+
     static {
         final int width = 1;//宽
         final int height = 1;//高
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
     }
 
-
     public static void writer(OutputStream outputStream) {
         try {
-            ImageIO.write(image, "jpg", outputStream);
+            ImageIO.write(image, "gif", outputStream);
         } catch (IOException e) {
             LOG.error("回写图片失败!", e);
         }
@@ -266,7 +269,7 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
 
             response.setCharacterEncoding(request.getCharacterEncoding());
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("image/jped");
+            response.setContentType("image/gif");
             writer(response.getOutputStream()); // 回写图片
             response.flushBuffer();
             sourceCounter.incrementAppendBatchAcceptedCount();
