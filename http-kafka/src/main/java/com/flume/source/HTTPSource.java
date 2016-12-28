@@ -206,8 +206,6 @@ public class HTTPSource extends AbstractSource implements EventDrivenSource, Con
 
     private static BufferedImage image = null;
 
-    private static byte[] imageByte = new byte[0];
-
     static {
         final int width = 1;//宽
         final int height = 1;//高
